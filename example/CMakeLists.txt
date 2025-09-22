@@ -10,9 +10,9 @@ add_executable(docker-example main.cpp)
 
 # Link against the docker client library
 # If the library is installed system-wide:
-# find_package(libdocker-cpp REQUIRED)
-# target_link_libraries(docker-example libdocker-cpp::libdocker-cpp)
+# find_package(docker-cpp REQUIRED)
+# target_link_libraries(docker-example docker-cpp::docker-cpp)
 
 # For building as part of the main project:
-target_link_libraries(docker-example libdocker-cpp)
+target_link_libraries(docker-example docker-cpp)
 target_include_directories(docker-example PRIVATE ${CMAKE_SOURCE_DIR})

@@ -24,7 +24,7 @@ FetchContent_MakeAvailable(DockerClient)
 
 # Create your executable
 add_executable(my_app main.cpp)
-target_link_libraries(my_app libdocker-cpp)
+target_link_libraries(my_app docker-cpp)
 ```
 
 ### Alternative: Manual Installation
@@ -41,8 +41,8 @@ sudo make install
 
 Then in your CMake project:
 ```cmake
-find_package(libdocker-cpp REQUIRED)
-target_link_libraries(your_target libdocker-cpp::libdocker-cpp)
+find_package(docker-cpp REQUIRED)
+target_link_libraries(your_target docker-cpp::docker-cpp)
 ```
 
 ## Development
@@ -70,7 +70,7 @@ make -j$(nproc)
 The build system will automatically:
 - Download and compile libcurl with OpenSSL support
 - Download RapidJSON headers
-- Build the shared library (`liblibdocker-cpp.so`)
+- Build the shared library (`libdocker-cpp.so`)
 - Build the test executable
 
 ## Example
