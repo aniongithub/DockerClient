@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(libdocker-cpp VERSION 1.0.0 LANGUAGES CXX)
 
-# Set policies to suppress warnings
-cmake_policy(SET CMP0148 NEW)
-cmake_policy(SET CMP0175 NEW)
-
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
