@@ -3,48 +3,9 @@ C++ Docker Client
 
 A C++ client library for the Docker Engine API.
 
-## Build Requirements
-- CMake 3.14 or higher
-- C++11 compatible compiler
-- Git (for fetching dependencies)
+## Using in Your Project
 
-## Dependencies
-All dependencies are automatically downloaded and built using CMake's FetchContent:
-- [libcurl](https://curl.haxx.se/libcurl/) - For HTTP communication with Docker API
-- [RapidJSON](https://github.com/Tencent/rapidjson/) - For JSON parsing (header-only)
-
-## Building
-
-### Quick Start
-```bash
-git clone https://github.com/aniongithub/DockerClient.git
-cd DockerClient
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
-
-### CMake Options
-The build system will automatically:
-- Download and compile libcurl with OpenSSL support
-- Download RapidJSON headers
-- Build the shared library (`liblibdocker-cpp.so`)
-- Build the test executable
-
-### Installation
-```bash
-# From the build directory
-sudo make install
-```
-
-This installs:
-- Library: `/usr/local/lib/liblibdocker-cpp.so`
-- Headers: `/usr/local/include/docker.h`
-- CMake config: `/usr/local/lib/cmake/libdocker-cpp/`
-
-### Using in Your Project
-
-#### Recommended: Using FetchContent (CMake 3.14+)
+### Recommended: Using FetchContent (CMake 3.14+)
 The easiest way to use this library in your project is with CMake's FetchContent:
 
 ```cmake
@@ -66,23 +27,51 @@ add_executable(my_app main.cpp)
 target_link_libraries(my_app libdocker-cpp)
 ```
 
-#### Alternative: Manual Installation
-After cloning and building the library:
+### Alternative: Manual Installation
+If you prefer system-wide installation:
+
 ```bash
-# From the build directory
+git clone https://github.com/aniongithub/DockerClient.git
+cd DockerClient
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
 sudo make install
 ```
-
-This installs:
-- Library: `/usr/local/lib/liblibdocker-cpp.so`
-- Headers: `/usr/local/include/docker.h`
-- CMake config: `/usr/local/lib/cmake/libdocker-cpp/`
 
 Then in your CMake project:
 ```cmake
 find_package(libdocker-cpp REQUIRED)
 target_link_libraries(your_target libdocker-cpp::libdocker-cpp)
 ```
+
+## Development
+
+### Build Requirements
+- CMake 3.14 or higher
+- C++11 compatible compiler
+- Git (for fetching dependencies)
+
+### Dependencies
+All dependencies are automatically downloaded and built using CMake's FetchContent:
+- [libcurl](https://curl.haxx.se/libcurl/) - For HTTP communication with Docker API
+- [RapidJSON](https://github.com/Tencent/rapidjson/) - For JSON parsing (header-only)
+
+### Building from Source
+```bash
+git clone https://github.com/aniongithub/DockerClient.git
+cd DockerClient
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+```
+
+### CMake Options
+The build system will automatically:
+- Download and compile libcurl with OpenSSL support
+- Download RapidJSON headers
+- Build the shared library (`liblibdocker-cpp.so`)
+- Build the test executable
 
 ## Example
 
