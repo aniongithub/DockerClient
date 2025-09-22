@@ -43,8 +43,42 @@ This installs:
 - CMake config: `/usr/local/lib/cmake/libdocker-cpp/`
 
 ### Using in Your Project
-After installation, you can use the library in your CMake project:
 
+#### Recommended: Using FetchContent (CMake 3.14+)
+The easiest way to use this library in your project is with CMake's FetchContent:
+
+```cmake
+cmake_minimum_required(VERSION 3.14)
+project(my_docker_app)
+
+include(FetchContent)
+
+# Fetch DockerClient library
+FetchContent_Declare(
+    DockerClient
+    GIT_REPOSITORY https://github.com/aniongithub/DockerClient.git
+    GIT_TAG        main  # or specific tag/commit
+)
+FetchContent_MakeAvailable(DockerClient)
+
+# Create your executable
+add_executable(my_app main.cpp)
+target_link_libraries(my_app libdocker-cpp)
+```
+
+#### Alternative: Manual Installation
+After cloning and building the library:
+```bash
+# From the build directory
+sudo make install
+```
+
+This installs:
+- Library: `/usr/local/lib/liblibdocker-cpp.so`
+- Headers: `/usr/local/include/docker.h`
+- CMake config: `/usr/local/lib/cmake/libdocker-cpp/`
+
+Then in your CMake project:
 ```cmake
 find_package(libdocker-cpp REQUIRED)
 target_link_libraries(your_target libdocker-cpp::libdocker-cpp)
