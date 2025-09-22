@@ -70,8 +70,8 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${rapidjson_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-    PRIVATE
-        ${curl_SOURCE_DIR}/include
+    INTERFACE
+        $<BUILD_INTERFACE:${curl_SOURCE_DIR}/include>
 )
 
 # Link libraries
@@ -92,6 +92,9 @@ target_compile_definitions(${PROJECT_NAME}
 # Create test executable
 add_executable(test test.cpp)
 target_link_libraries(test ${PROJECT_NAME})
+
+# Add example subdirectory
+add_subdirectory(example)
 
 # Installation
 include(GNUInstallDirs)

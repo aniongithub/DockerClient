@@ -126,7 +126,7 @@ JSON_DOCUMENT Docker::logs_container(const std::string& container_id, bool follo
     path += param("stderr", o_stderr);
     path += param("timestamps", timestamps);
     path += param("tail", tail);
-    return requestAndParse(GET,path,101);
+    return requestAndParse(GET,path,200);
 }
 JSON_DOCUMENT Docker::create_container(JSON_DOCUMENT& parameters, const std::string& name){
     std::string path = "/containers/create";
@@ -185,6 +185,129 @@ JSON_DOCUMENT Docker::attach_to_container(const std::string& container_id, bool 
     return requestAndParse(POST,path,101);
 }
 //void Docker::copy_from_container(const std::string& container_id, const std::string& file_path, const std::string& dest_tar_file){}
+
+/*
+*  High-level container execution and log streaming methods
+*/
+
+std::string Docker::run_container_async(
+    const std::string& image,
+    const std::vector<std::string>& command,
+    const std::string& container_name
+) {
+    try {
+        // 1. Create container
+        JSON_DOCUMENT create_params(rapidjson::kObjectType);
+        create_params.AddMember("Image", rapidjson::Value(image.c_str(), create_params.GetAllocator()), create_params.GetAllocator());
+        
+        // Set command
+        if (!command.empty()) {
+            JSON_VALUE commands(rapidjson::kArrayType);
+            for (const auto& cmd : command) {
+                commands.PushBack(rapidjson::Value(cmd.c_str(), create_params.GetAllocator()), create_params.GetAllocator());
+            }
+            create_params.AddMember("Cmd", commands, create_params.GetAllocator());
+        }
+        
+        // Create with optional name
+        JSON_DOCUMENT create_result = create_container(create_params, container_name);
+        if (!create_result.HasMember("success") || !create_result["success"].GetBool()) {
+            return ""; // Failed to create
+        }
+        
+        std::string container_id = create_result["data"]["Id"].GetString();
+        
+        // 2. Start container
+        JSON_DOCUMENT start_result = start_container(container_id);
+        if (!start_result.HasMember("success") || !start_result["success"].GetBool()) {
+            delete_container(container_id, false, true); // cleanup
+            return ""; // Failed to start
+        }
+        
+        return container_id;
+        
+    } catch (const std::exception& e) {
+        return ""; // Exception occurred
+    }
+}
+
+bool Docker::attach_log_stream(
+    const std::string& container_id,
+    OutputCallback on_stdout,
+    ErrorCallback on_stderr
+) {
+    if (container_id.empty() || (!on_stdout && !on_stderr)) {
+        return false;
+    }
+    
+    try {
+        // Check if already streaming logs for this container
+        if (active_log_streams[container_id]) {
+            return false; // Already attached
+        }
+        
+        // Get logs using the existing logs_container method
+        // Note: This is a simplified implementation - in a real implementation,
+        // you'd want to use Docker's attach API with streaming for real-time logs
+        JSON_DOCUMENT logs = logs_container(container_id, false, true, true, false, "all");
+        
+        if (logs.HasMember("success") && logs["success"].GetBool() && logs["data"].IsString()) {
+            std::string raw_logs(logs["data"].GetString(), logs["data"].GetStringLength());
+            parse_docker_logs(raw_logs, on_stdout, on_stderr);
+            active_log_streams[container_id] = true;
+            return true;
+        }
+        
+        return false;
+        
+    } catch (const std::exception& e) {
+        return false;
+    }
+}
+
+bool Docker::detach_log_stream(const std::string& container_id) {
+    if (container_id.empty()) {
+        return false;
+    }
+    
+    auto it = active_log_streams.find(container_id);
+    if (it != active_log_streams.end()) {
+        active_log_streams.erase(it);
+        return true;
+    }
+    
+    return false; // Wasn't attached
+}
+
+void Docker::parse_docker_logs(const std::string& raw_logs, OutputCallback on_stdout, ErrorCallback on_stderr) {
+    size_t offset = 0;
+    const char* data = raw_logs.data();
+    size_t total_length = raw_logs.length();
+    
+    while (offset + 8 <= total_length) {
+        // Parse Docker stream format: [stream_type(1)][reserved(3)][length(4)][data(length)]
+        uint8_t stream_type = data[offset];
+        uint32_t msg_length = (((uint8_t)data[offset + 4]) << 24) |
+                             (((uint8_t)data[offset + 5]) << 16) |
+                             (((uint8_t)data[offset + 6]) << 8) |
+                             ((uint8_t)data[offset + 7]);
+        
+        if (offset + 8 + msg_length > total_length) {
+            break; // Incomplete message
+        }
+        
+        std::string message(data + offset + 8, msg_length);
+        
+        // Call appropriate callback based on stream type
+        if (stream_type == 1 && on_stdout) {
+            on_stdout(message);
+        } else if (stream_type == 2 && on_stderr) {
+            on_stderr(message);
+        }
+        
+        offset += 8 + msg_length;
+    }
+}
 
 
 /*
@@ -260,7 +383,8 @@ JSON_DOCUMENT Docker::requestAndParse(Method method, const std::string& path, un
         doc.AddMember("success", true, doc.GetAllocator());
 
         JSON_VALUE dataString;
-        dataString.SetString(readBuffer.c_str(), doc.GetAllocator());
+        // Use the full length to handle binary data correctly (don't rely on null termination)
+        dataString.SetString(readBuffer.c_str(), readBuffer.length(), doc.GetAllocator());
 
         doc.AddMember("data", dataString, doc.GetAllocator());
     }else{
