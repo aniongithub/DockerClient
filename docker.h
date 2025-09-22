@@ -2,6 +2,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
+#include <vector>
+#include <map>
 #include <curl/curl.h>
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
@@ -23,6 +26,11 @@ std::string param( const std::string& param_name, int param_value);
 std::string param( const std::string& param_name, JSON_DOCUMENT& param_value);
 
 std::string jsonToString(JSON_VALUE & doc);
+
+// Callback types for container execution
+typedef std::function<void(const std::string& data)> OutputCallback;
+typedef std::function<void(const std::string& data)> ErrorCallback;
+typedef std::function<std::string()> InputCallback;
 
 class Docker{
     public :
@@ -61,6 +69,27 @@ class Docker{
         JSON_DOCUMENT attach_to_container(const std::string& container_id, bool logs=false, bool stream=false, bool o_stdin=false, bool o_stdout=false, bool o_stderr=false);
         //void copy_from_container(const std::string& container_id, const std::string& file_path, const std::string& dest_tar_file);
 
+        /*
+        * High-level container execution and log streaming
+        */
+        
+        // Convenience method: create and start container in one call
+        std::string run_container_async(
+            const std::string& image,
+            const std::vector<std::string>& command,
+            const std::string& container_name = ""
+        );
+        
+        // Attach live log streaming (non-blocking, runs callbacks in background)
+        bool attach_log_stream(
+            const std::string& container_id,
+            OutputCallback on_stdout = nullptr,
+            ErrorCallback on_stderr = nullptr
+        );
+        
+        // Detach log streaming
+        bool detach_log_stream(const std::string& container_id);
+
     private:
         std::string host_uri;
         bool is_remote;
@@ -68,9 +97,15 @@ class Docker{
         CURLcode res{};
 
         static JSON_DOCUMENT emptyDoc;
+        
+        // Log streaming state
+        std::map<std::string, bool> active_log_streams;
 
         JSON_DOCUMENT requestAndParse(Method method, const std::string& path, unsigned success_code = 200, JSON_DOCUMENT& param=emptyDoc, bool isReturnJson=false);
         JSON_DOCUMENT requestAndParseJson(Method method, const std::string& path, unsigned success_code = 200, JSON_DOCUMENT& param=emptyDoc);
+
+        // Helper method to parse Docker's multiplexed log stream
+        void parse_docker_logs(const std::string& raw_logs, OutputCallback on_stdout, ErrorCallback on_stderr);
 
         static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp){
             ((std::string*)userp)->append((char*)contents, size * nmemb);

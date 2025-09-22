@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Include targets file
+include("${CMAKE_CURRENT_LIST_DIR}/libdocker-cppTargets.cmake")
+
+# Set variables for backwards compatibility
+set(LIBDOCKER_CPP_FOUND TRUE)
+set(LIBDOCKER_CPP_VERSION "@PROJECT_VERSION@")
+
+check_required_components(libdocker-cpp)
