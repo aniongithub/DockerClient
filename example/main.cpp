@@ -16,9 +16,9 @@ int main() {
         std::cout << "1. Connecting to Docker daemon...\n";
         JSON_DOCUMENT system_info = client.system_info();
         if (system_info.HasMember("success") && system_info["success"].GetBool()) {
-            std::cout << "   ✓ Connected successfully\n\n";
+            std::cout << "   Connected successfully\n\n";
         } else {
-            std::cerr << "   ✗ Failed to connect. Make sure Docker is running.\n";
+            std::cerr << "   Failed to connect. Make sure Docker is running.\n";
             return 1;
         }
 
@@ -32,7 +32,7 @@ int main() {
         );
         
         if (!container_id.empty()) {
-            std::cout << "   ✓ Container started with ID: " << container_id.substr(0, 12) << "...\n";
+            std::cout << "   Container started with ID: " << container_id.substr(0, 12) << "...\n";
             
             // Wait for container to complete
             JSON_DOCUMENT wait_result = client.wait_container(container_id);
@@ -45,7 +45,7 @@ int main() {
             
             // Attach log stream to capture output
             if (client.attach_log_stream(container_id, capture_stdout)) {
-                std::cout << "   ✓ Container executed successfully\n";
+                std::cout << "   Container executed successfully\n";
                 std::cout << "   Output: " << captured_output;
                 client.detach_log_stream(container_id);
             }
@@ -53,7 +53,7 @@ int main() {
             // Cleanup
             client.delete_container(container_id, false, true);
         } else {
-            std::cout << "   ✗ Failed to start container\n";
+            std::cout << "   Failed to start container\n";
             return 1;
         }
 
@@ -67,7 +67,7 @@ int main() {
         );
         
         if (!container_id.empty()) {
-            std::cout << "   ✓ Container started, attaching log stream...\n";
+            std::cout << "   Container started, attaching log stream...\n";
             
             auto stdout_callback = [](const std::string& data) {
                 std::cout << "   [STDOUT] " << data;
@@ -83,7 +83,7 @@ int main() {
             if (client.attach_log_stream(container_id, stdout_callback, stderr_callback)) {
                 // Wait for completion
                 client.wait_container(container_id);
-                std::cout << "   ✓ Container completed with log streaming\n";
+                std::cout << "   Container completed with log streaming\n";
                 
                 // Detach and cleanup
                 client.detach_log_stream(container_id);
@@ -91,16 +91,10 @@ int main() {
             
             client.delete_container(container_id, false, true);
         } else {
-            std::cout << "   ✗ Failed to start container\n";
+            std::cout << "   Failed to start container\n";
         }
 
-        std::cout << "\n✓ Example completed!\n";
-        std::cout << "\nThis example demonstrated:\n";
-        std::cout << "  - Separated container execution and log streaming\n";
-        std::cout << "  - Async container creation and starting\n";
-        std::cout << "  - Attachable/detachable log streams\n";
-        std::cout << "  - Composable with existing low-level API\n";
-        std::cout << "  - Manual container lifecycle management\n";
+        std::cout << "\nDone.\n";
 
     } catch (const std::exception& e) {
         std::cerr << "Exception occurred: " << e.what() << std::endl;
